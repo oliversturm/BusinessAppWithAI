@@ -1,0 +1,30 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.12.35506.116 d17.12
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BusinessAppWithAI.Server", "BusinessAppWithAI.Server\BusinessAppWithAI.Server.csproj", "{81CAFA76-6586-4E0C-8C45-F4B3FEE1E9AC}"
+EndProject
+Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "businessappwithai.client", "businessappwithai.client\businessappwithai.client.esproj", "{2BE57B6E-6D46-4848-A6AF-B4A41B9E78FA}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{81CAFA76-6586-4E0C-8C45-F4B3FEE1E9AC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{81CAFA76-6586-4E0C-8C45-F4B3FEE1E9AC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{81CAFA76-6586-4E0C-8C45-F4B3FEE1E9AC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{81CAFA76-6586-4E0C-8C45-F4B3FEE1E9AC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2BE57B6E-6D46-4848-A6AF-B4A41B9E78FA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2BE57B6E-6D46-4848-A6AF-B4A41B9E78FA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2BE57B6E-6D46-4848-A6AF-B4A41B9E78FA}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{2BE57B6E-6D46-4848-A6AF-B4A41B9E78FA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2BE57B6E-6D46-4848-A6AF-B4A41B9E78FA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2BE57B6E-6D46-4848-A6AF-B4A41B9E78FA}.Release|Any CPU.Deploy.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
