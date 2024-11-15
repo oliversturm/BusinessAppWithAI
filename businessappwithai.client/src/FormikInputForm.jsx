@@ -29,9 +29,9 @@ const FormikInputForm = ({ onSubmit }) => {
   return (
     <form
       onSubmit={formik.handleSubmit}
-      className="bg-blue-50 rounded-lg p-8 flex flex-col"
+      className="bg-blue-50 rounded-lg p-8 flex flex-col mb-2 gap-2"
     >
-      <h2 className="font-bold text-xl mb-4">Formik input handling</h2>
+      <h2 className="font-bold text-xl mb-4">Formik input, yup validation</h2>
       <FormikInput formik={formik} field="name" label="Name" />
 
       <FormikInput formik={formik} type="number" field="age" label="Age" />

@@ -1,5 +1,6 @@
 import FormikInputForm from "@/FormikInputForm.jsx";
 import InputForm from "@/InputForm.jsx";
+import AIInputForm from "@/AIInputForm.jsx";
 
 function App() {
   return (
@@ -9,6 +10,7 @@ function App() {
       </h1>
       <InputForm />
       <FormikInputForm />
+      <AIInputForm />
     </div>
   );
 }

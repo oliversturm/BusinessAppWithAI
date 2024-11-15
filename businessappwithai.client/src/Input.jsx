@@ -9,7 +9,7 @@ const Input = ({ field, type, label, value, onChange, error }) => {
   );
 
   return (
-    <div className="bg-blue-200 rounded px-2 py-1 mb-2 flex flex-row items-center">
+    <div className="bg-blue-200 rounded px-2 py-1 flex flex-row items-center">
       <label htmlFor={field} className="block w-20">
         {label}
       </label>

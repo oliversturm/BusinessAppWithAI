@@ -57,9 +57,9 @@ const InputForm = ({ onSubmit }) => {
   return (
     <form
       onSubmit={innerSubmit}
-      className="bg-amber-50 rounded-lg p-8 flex flex-col mb-2"
+      className="bg-amber-50 rounded-lg p-8 flex flex-col mb-2 gap-2"
     >
-      <h2 className="font-bold text-xl mb-4">Manual input handling</h2>
+      <h2 className="font-bold text-xl mb-4">Manual input, manual validation</h2>
       <Input
         field="name"
         label="Name"
