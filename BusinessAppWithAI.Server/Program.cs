@@ -3,7 +3,16 @@ using FluentValidation;
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddScoped<IValidator<BusinessObject>, BusinessObjectValidator>();
 
+builder.Services.AddCors(options => {
+  options.AddDefaultPolicy(builder => {
+    builder.WithOrigins("http://localhost:51655")
+      .AllowAnyHeader()
+      .AllowAnyMethod();
+  });
+});
+
 var app = builder.Build();
+app.UseCors();
 
 app.MapPost("/receiver", async (IValidator<BusinessObject> validator, BusinessObject businessObject) => {
   var result = await validator.ValidateAsync(businessObject);
@@ -12,6 +21,16 @@ app.MapPost("/receiver", async (IValidator<BusinessObject> validator, BusinessOb
   }
 
   return Results.Ok(businessObject);
+});
+
+app.MapPost("/api/configureRule", async (Rule rule) => {
+  Console.WriteLine($"Setting rule for '{rule.Field}': '{rule.RuleText}'");
+  return Results.Ok(rule);
+});
+
+app.MapPost("/api/validate", async (ValidationInput input) => {
+  Console.WriteLine($"Validating field '{input.Field}' with value '{input.Value}'");
+  return Results.Ok(new ValidationResult(true, null));
 });
 
 app.Run();
@@ -32,3 +51,9 @@ public class BusinessObjectValidator : AbstractValidator<BusinessObject> {
     return validDomains.Contains(domain);
   }
 }
+
+public record Rule(string Field, string RuleText);
+
+public record ValidationInput(string Field, string Value);
+
+public record ValidationResult(bool Valid, string? Message);
