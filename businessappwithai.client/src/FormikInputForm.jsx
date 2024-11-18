@@ -7,6 +7,7 @@ const FormikInputForm = ({ onSubmit }) => {
     initialValues: {
       name: "",
       age: 0,
+      email: "",
     },
     validationSchema: Yup.object({
       name: Yup.string()
@@ -20,6 +21,7 @@ const FormikInputForm = ({ onSubmit }) => {
       age: Yup.number()
         .min(1, "Age must be at least 1")
         .required("Age is required"),
+      email: Yup.string().email("Email must be a valid email address"),
     }),
     onSubmit: (values) => {
       onSubmit(values);
@@ -35,6 +37,8 @@ const FormikInputForm = ({ onSubmit }) => {
       <FormikInput formik={formik} field="name" label="Name" />
 
       <FormikInput formik={formik} type="number" field="age" label="Age" />
+
+      <FormikInput formik={formik} field="email" label="Email" />
 
       <button
         type="submit"
