@@ -5,14 +5,14 @@ import { useState } from "react";
 import RuleEditor from "@/RuleEditor.jsx";
 
 const validate = (field, value, context) =>
-  fetch("/api/validate", {
+  fetch("http://localhost:5086/api/validate", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
       field,
-      value,
+      value: String(value),
     }),
   })
     .then((response) => response.json())
