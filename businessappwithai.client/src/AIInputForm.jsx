@@ -4,6 +4,16 @@ import FormikInput from "@/FormikInput.jsx";
 import { useState } from "react";
 import RuleEditor from "@/RuleEditor.jsx";
 
+const valueHandler = (value) => {
+  if (typeof value === "number") return String(value);
+  else if (typeof value === "string") return value;
+  else {
+    // This may fail for some types, we only handle the ones
+    // needed for this demo.
+    return JSON.stringify(value);
+  }
+};
+
 const validate = (field, value, context) =>
   fetch("http://localhost:5086/api/validate", {
     method: "POST",
@@ -12,7 +22,7 @@ const validate = (field, value, context) =>
     },
     body: JSON.stringify({
       field,
-      value: String(value),
+      value: valueHandler(value),
     }),
   })
     .then((response) => response.json())
@@ -45,6 +55,8 @@ const AIInputForm = ({ onSubmit }) => {
           return validate("email", value, context);
         },
       ),
+    }).test("entity-language-rule", function (value, context) {
+      return validate("_entity", value, context);
     }),
     onSubmit: (values) => {
       onSubmit(values);
