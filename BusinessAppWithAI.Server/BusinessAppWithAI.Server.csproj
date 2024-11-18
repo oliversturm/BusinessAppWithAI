@@ -16,10 +16,12 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="FluentValidation" Version="11.10.0"/>
+        <PackageReference Include="FluentValidation" Version="11.10.0" />
         <PackageReference Include="Microsoft.AspNetCore.SpaProxy">
             <Version>9.*-*</Version>
         </PackageReference>
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.11.0" />
+        <PackageReference Include="OpenAI" Version="2.0.0" />
     </ItemGroup>
 
 </Project>

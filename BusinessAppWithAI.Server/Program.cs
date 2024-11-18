@@ -2,6 +2,7 @@ using FluentValidation;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddScoped<IValidator<BusinessObject>, BusinessObjectValidator>();
+builder.Services.AddSingleton<ILanguageValidator, LanguageValidator>();
 
 builder.Services.AddCors(options => {
   options.AddDefaultPolicy(builder => {
@@ -51,9 +52,3 @@ public class BusinessObjectValidator : AbstractValidator<BusinessObject> {
     return validDomains.Contains(domain);
   }
 }
-
-public record Rule(string Field, string RuleText);
-
-public record ValidationInput(string Field, string Value);
-
-public record ValidationResult(bool Valid, string? Message);
