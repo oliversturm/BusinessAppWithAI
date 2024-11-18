@@ -2,6 +2,7 @@ import { useFormik } from "formik";
 import * as Yup from "yup";
 import FormikInput from "@/FormikInput.jsx";
 import { useState } from "react";
+import RuleEditor from "@/RuleEditor.jsx";
 
 const validate = (field, value, context) =>
   fetch("/api/validate", {
@@ -38,20 +39,29 @@ const AIInputForm = ({ onSubmit }) => {
       age: Yup.number().test("age-language-rule", function (value, context) {
         return validate("age", value, context);
       }),
+      email: Yup.string().test(
+        "email-language-rule",
+        function (value, context) {
+          return validate("email", value, context);
+        },
+      ),
     }),
     onSubmit: (values) => {
       onSubmit(values);
     },
   });
 
-  const [rules, setRules] = useState({ _entity: "", name: "", age: "" });
+  const [rules, setRules] = useState({
+    _entity: "",
+    name: "",
+    age: "",
+    email: "",
+  });
   const ruleChanged = (field) => (e) => {
     setRules((r) => ({ ...r, [field]: e.target.value }));
   };
 
-  const [configRuleActive, setConfigRuleActive] = useState({});
-  const configureRule = (field, rule) => {
-    setConfigRuleActive((c) => ({ ...c, [field]: true }));
+  const configureRule = (field, rule) =>
     fetch("http://localhost:5086/api/configureRule", {
       method: "POST",
       headers: {
@@ -61,10 +71,7 @@ const AIInputForm = ({ onSubmit }) => {
         field,
         ruleText: rule,
       }),
-    }).then(() => {
-      setConfigRuleActive((c) => ({ ...c, [field]: false }));
     });
-  };
 
   return (
     <form
@@ -73,21 +80,12 @@ const AIInputForm = ({ onSubmit }) => {
     >
       <div className="flex flex-row gap-2 mb-4">
         <h2 className="font-bold text-xl mb-4">Formik input, AI validation</h2>
-        <div className="flex flex-row bg-red-200 rounded flex-grow p-1 gap-1">
-          <textarea
-            className="flex-grow"
-            onChange={ruleChanged("_entity")}
-            value={rules._entity}
-          />
-          <button
-            className="bg-red-300 rounded px-2 disabled:bg-gray-300"
-            type="button"
-            onClick={() => configureRule("_entity", rules._entity)}
-            disabled={configRuleActive._entity}
-          >
-            Set Entity Rule
-          </button>
-        </div>
+        <RuleEditor
+          name="_entity"
+          value={rules._entity}
+          onChange={ruleChanged}
+          configureRule={configureRule}
+        />
       </div>
       <div className="flex flex-row gap-2">
         <FormikInput
@@ -96,21 +94,12 @@ const AIInputForm = ({ onSubmit }) => {
           label="Name"
           vertical={true}
         />
-        <div className="flex flex-row bg-red-200 rounded flex-grow p-1 gap-1">
-          <textarea
-            className="flex-grow"
-            onChange={ruleChanged("name")}
-            value={rules.name}
-          />
-          <button
-            className="bg-red-300 rounded px-2 disabled:bg-gray-300"
-            type="button"
-            onClick={() => configureRule("name", rules.name)}
-            disabled={configRuleActive.name}
-          >
-            Set Rule
-          </button>
-        </div>
+        <RuleEditor
+          name="name"
+          value={rules.name}
+          onChange={ruleChanged}
+          configureRule={configureRule}
+        />
       </div>
 
       <div className="flex flex-row gap-2">
@@ -121,21 +110,27 @@ const AIInputForm = ({ onSubmit }) => {
           label="Age"
           vertical={true}
         />
-        <div className="flex flex-row bg-red-200 rounded flex-grow p-1 gap-1">
-          <textarea
-            className="flex-grow"
-            onChange={ruleChanged("age")}
-            value={rules.age}
-          />
-          <button
-            className="bg-red-300 rounded px-2 disabled:bg-gray-300"
-            type="button"
-            onClick={() => configureRule("age", rules.age)}
-            disabled={configRuleActive.age}
-          >
-            Set Rule
-          </button>
-        </div>
+        <RuleEditor
+          name="age"
+          value={rules.age}
+          onChange={ruleChanged}
+          configureRule={configureRule}
+        />
+      </div>
+
+      <div className="flex flex-row gap-2">
+        <FormikInput
+          formik={formik}
+          field="email"
+          label="Email"
+          vertical={true}
+        />
+        <RuleEditor
+          name="email"
+          value={rules.email}
+          onChange={ruleChanged}
+          configureRule={configureRule}
+        />
       </div>
 
       <button
