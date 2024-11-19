@@ -127,7 +127,14 @@ public class CodeGenerator {
 #if DEBUG
     Console.WriteLine($"[PROMPT]:\n{userPrompt}");
 #endif
+    // Use this for OpenAI connection
     ChatClient client = new(model: MODEL_NAME, apiKey: apiKey);
+
+    // Use this for connection to local model, e.g. LM Studio
+    // ChatClient client = new(
+    //   "model", // model name -- doesn't matter if just one is loaded, but must be non-empty!
+    //   new ApiKeyCredential("key"), // key also can't be empty even if it's not needed
+    //   new OpenAIClientOptions() { Endpoint = new Uri("http://localhost:1234/v1") });
     ChatCompletion completion = client.CompleteChat(
       [
         new SystemChatMessage(SYSTEM_PROMPT),
