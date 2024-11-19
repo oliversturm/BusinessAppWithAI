@@ -4,23 +4,13 @@ using Microsoft.CodeAnalysis.Emit;
 using OpenAI.Chat;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace BusinessAppWithAI.Server;
 
 public record SchemaProperty(string Type, string Name);
 
-public record SchemaType(string Name, SchemaProperty[] Properties);
-
-public class Validator(Dictionary<string, MethodInfo> validators) {
-  string? ValidateField(string field, string value, string targetType) {
-    if (validators.TryGetValue(field, out var validator)) {
-      object typedValue = Convert.ChangeType(value, Type.GetType(targetType));
-      return (string?)validator.Invoke(null, [typedValue]);
-    }
-
-    return null;
-  }
-}
+public record SchemaType(Type Type, string Name, SchemaProperty[] Properties);
 
 public class CodeGenerator {
   const string MODEL_NAME = "gpt-4o";
@@ -44,8 +34,11 @@ public class CodeGenerator {
                               Jede solche Methode sollte den Namen Validate<Property> haben.
                               Die Methode sollte einen Parameter vom Typ der Property entgegennehmen und 'string?' zurückgeben.
                               Zum Beispiel wäre die Methode für eine Property "public string Name" so deklariert:
+
                               public string? ValidateName(string name) ...
+
                               Als zweites Beispiel wäre die Methode für eine Property "public int Age" so deklariert:
+
                               public string? ValidateAge(int age) ...
 
                               Die folgende Liste enthält Regeln, die sich auf einzelne Properties des Schemas beziehen.
@@ -53,11 +46,13 @@ public class CodeGenerator {
 
                               {RULES_MARKER}
 
-                              Jeder der Validate-Methoden muss nun so implementiert werden, dass sie entsprechend der Regel
-                              fǔr die Property die Validität des Feldwertes prüft. Sollte es keine Regel für die Property
+                              Jede der Validate-Methoden muss nun so implementiert werden, dass sie entsprechend der Regel
+                              für die Property die Validität des Feldwertes prüft. Sollte es keine Regel für die Property
                               geben, oder die Validität des Wertes kann zweifelsfrei festgestellt werden, muss die Methode
                               'null' zurückgeben. Wenn die Validität nicht gegeben ist, muss ein Text zurückgegeben werden,
-                              der den Fehlerzustand kurz und präzise auf deutsch beschreibt.
+                              der den Fehlerzustand kurz und präzise beschreibt.
+                              Bevor in einer Validierungsmethode auf den Wert zugegriffen wird, muss geprüft werden,
+                              dass dieser nicht "null" ist (für Referenztypen).
 
                               Für den besonderen Feldnamen '_entity' muss eine weitere Methode generiert werden, mit 
                               dem Namen 'ValidateEntity' und folgender Signatur: 
@@ -70,12 +65,15 @@ public class CodeGenerator {
                               Die Implementation dieser Methode muss die Validierung aller Properties durch Aufruf
                               der jeweiligen Validate<Property>-Methoden beinhalten, sowie weitere Prüfungen, wie sie
                               durch die Regel für den besonderen Feldnamen '_entity' vorgegeben sind. Es müssen
-                              immer alle Validierungen ausgeführt werden, und etwaige Fehlerresultate werden in der 
+                              immer alle Validierungen ausgeführt werden, und etwaige Fehlerresultate werden in einer 
                               Resultatsliste gesammelt. Wenn diese Liste letztlich etwas enthält, wird sie als
-                              Result zurückgegeben, andernfalls ist der Rückgabewert 'null'.
+                              Resultat der Methode zurückgegeben, andernfalls ist der Rückgabewert 'null'.
 
                               Gib ausschließlich Code und keinerlei Beschreibungstext aus.
-                              Gib alle Fehlertexte in deutsch aus.
+                              Der oben angegebene schematische Typ soll nicht in der Ausgabe enthalten sein.
+                              Verwende die Direktive "#nullable enable" zu Beginn der Datei.
+                              Gib alle Fehlertexte in deutsch aus, ohne dabei technische
+                              Beschreibungen wie "nicht null" zu verwenden.
                               Verwende im Code nur Klassen aus den Namespaces System und System.Text.RegularExpressions.
                               Verwende NICHT die Klasse System.Net.Mail.MailAddress zur Verifikation von Email-Adressen.
                               """;
@@ -94,7 +92,7 @@ public class CodeGenerator {
 
   string GenerateModelCode() {
     var sb = new StringBuilder();
-    sb.AppendLine($$"""public class {{schemaType.Name}} {""");
+    sb.AppendLine($$"""public class {{schemaType.Type.FullName}} {""");
 
     foreach (var property in schemaType.Properties) {
       sb.AppendLine($$"""  public {{property.Type}} {{property.Name}} { get; }""");
@@ -104,14 +102,24 @@ public class CodeGenerator {
     return sb.ToString();
   }
 
-  public void UpdateValidator() {
+  public Validator? Validator { get; private set; }
+
+  public void UpdateValidator(IEnumerable<string> validationRules) {
+    var code = GenerateCode(validationRules);
+    var assembly = CompileValidationCode(code);
+    if (assembly != null) {
+      var validators = GetValidatorMethods(assembly);
+      this.Validator = new Validator(schemaType, validators);
+    }
+    else {
+      this.Validator = null;
+    }
   }
 
   string GenerateCode(IEnumerable<string> validationRules) {
-    ArgumentNullException.ThrowIfNull(schemaType);
     ArgumentNullException.ThrowIfNull(validationRules);
 
-    string rulesString = "- " + string.Join(", \n- ", validationRules);
+    string rulesString = "- " + string.Join("\n- ", validationRules);
     var userPrompt = BASE_PROMPT
       .Replace(MODEL_CODE, "\n" + modelCode + "\n")
       .Replace(RULES_MARKER, "\n" + rulesString + "\n");
@@ -128,21 +136,15 @@ public class CodeGenerator {
       new ChatCompletionOptions { Temperature = 0, });
 
     var code = completion.Content[0].Text;
-    var index = code.IndexOf(@"```csharp");
-    if (index > -1) {
-      var last = code.IndexOf(@"```", index + 9);
-      if (last > -1) {
-        code = code.Substring(index + 9, last - index - 9);
-      }
-      else {
-        code = code.Substring(index + 9, code.Length - index - 9);
-      }
-    }
-
-    return code;
+    var match = Regex.Match(code, @".*```csharp(.*?)\n```.*", RegexOptions.Singleline);
+    var processedCode = match.Success ? match.Groups[1].Value : code;
+#if DEBUG
+    Console.WriteLine($"[CODE]:\n{processedCode}");
+#endif
+    return processedCode;
   }
 
-  MethodInfo? CompileValidationCode(string code) {
+  Assembly? CompileValidationCode(string code) {
     ArgumentNullException.ThrowIfNull(code);
 
     SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(code);
@@ -157,11 +159,9 @@ public class CodeGenerator {
 
     CSharpCompilation compilation = CSharpCompilation.Create(
       assemblyName,
-      new[] { syntaxTree },
+      [syntaxTree],
       references,
       new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
-
-    MethodInfo method = null;
 
     using var ms = new MemoryStream();
     EmitResult result = compilation.Emit(ms);
@@ -170,32 +170,49 @@ public class CodeGenerator {
       foreach (Diagnostic diagnostic in result.Diagnostics) {
         Console.WriteLine(diagnostic.ToString());
       }
+
+      return null;
     }
     else {
       ms.Seek(0, SeekOrigin.Begin);
-      Assembly assembly = Assembly.Load(ms.ToArray());
-      Type type = assembly.GetType(VALIDATOR_CLASS_NAME);
-      method = type.GetMethod(VALIDATION_METHOD_NAME);
+      return Assembly.Load(ms.ToArray());
     }
-
-    return method;
   }
 
-  public void Validate(MethodInfo method, params object[] validationInput) {
-    ArgumentNullException.ThrowIfNull(method);
-    ArgumentNullException.ThrowIfNull(validationInput);
-    try {
-      method.Invoke(null, validationInput);
+  Dictionary<string, MethodInfo> GetValidatorMethods(Assembly assembly) {
+    Type? type = assembly.GetType(VALIDATOR_CLASS_NAME);
+    if (type == null) {
+      throw new Exception($"Type '{VALIDATOR_CLASS_NAME}' not found in assembly.");
     }
-    catch (TargetInvocationException ex) {
-      throw new ValidationException("Validation error. See inner exception for details.", ex.InnerException);
+
+    var result = new Dictionary<string, MethodInfo>();
+    foreach (var property in schemaType.Properties) {
+      string methodName = $"Validate{property.Name}";
+      var method = type.GetMethod(methodName);
+      if (method != null) {
+        result.Add(property.Name, method);
+      }
+      else {
+        throw new Exception($"Method '{methodName}' not found in assembly.");
+      }
     }
+
+    var entityMethod = type.GetMethod("ValidateEntity");
+    if (entityMethod != null) {
+      result.Add("_entity", entityMethod);
+    }
+    else {
+      throw new Exception($"Method 'ValidateEntity' not found in assembly.");
+    }
+
+    return result;
   }
 
   public static SchemaType GetModelSchema<T>() where T : class {
     var t = typeof(T);
-    var properties = t.GetProperties(BindingFlags.Instance | BindingFlags.Public).Select(
-      p => new SchemaProperty(p.PropertyType.Name, p.Name)).ToArray();
-    return new SchemaType(t.Name, properties);
+    var properties = t.GetProperties(BindingFlags.Instance | BindingFlags.Public)
+      .Where(p => p.PropertyType.FullName != null)
+      .Select(p => new SchemaProperty(p.PropertyType.FullName!, p.Name)).ToArray();
+    return new SchemaType(t, t.Name, properties);
   }
 }
