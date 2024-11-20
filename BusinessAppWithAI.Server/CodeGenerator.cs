@@ -2,6 +2,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Emit;
 using OpenAI.Chat;
+using System.Diagnostics;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -126,6 +127,7 @@ public class CodeGenerator {
 
 #if DEBUG
     Console.WriteLine($"[PROMPT]:\n{userPrompt}");
+    var stopwatch = Stopwatch.StartNew();
 #endif
     // Use this for OpenAI connection
     ChatClient client = new(model: MODEL_NAME, apiKey: apiKey);
@@ -146,7 +148,9 @@ public class CodeGenerator {
     var match = Regex.Match(code, @".*```csharp(.*?)\n```.*", RegexOptions.Singleline);
     var processedCode = match.Success ? match.Groups[1].Value : code;
 #if DEBUG
+    stopwatch.Stop();
     Console.WriteLine($"[CODE]:\n{processedCode}");
+    Console.WriteLine($"[TIME]: {stopwatch.ElapsedMilliseconds}ms");
 #endif
     return processedCode;
   }
