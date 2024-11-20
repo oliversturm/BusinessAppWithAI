@@ -16,6 +16,9 @@ public record SchemaType(Type Type, string Name, SchemaProperty[] Properties);
 public class CodeGenerator {
   const string MODEL_NAME = "gpt-4o";
 
+  // This is often faster than gpt-4o
+  // const string MODEL_NAME = "o1-mini";
+
   const string VALIDATOR_CLASS_NAME = "Validator";
 
   const string RULES_MARKER = "{{RULES}}";
@@ -127,6 +130,7 @@ public class CodeGenerator {
 
 #if DEBUG
     Console.WriteLine($"[PROMPT]:\n{userPrompt}");
+
     var stopwatch = Stopwatch.StartNew();
 #endif
     // Use this for OpenAI connection
@@ -141,8 +145,11 @@ public class CodeGenerator {
       [
         new SystemChatMessage(SYSTEM_PROMPT),
         new UserChatMessage(userPrompt),
+        // for o1-preview or o1-mini, combine the two prompts
+        //new UserChatMessage(SYSTEM_PROMPT + userPrompt),
       ],
-      new ChatCompletionOptions { Temperature = 0, });
+      new ChatCompletionOptions { Temperature = 0, }
+    );
 
     var code = completion.Content[0].Text;
     var match = Regex.Match(code, @".*```csharp(.*?)\n```.*", RegexOptions.Singleline);
