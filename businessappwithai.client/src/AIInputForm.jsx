@@ -16,64 +16,85 @@ const valueHandler = (value) => {
   }
 };
 
-const validate = (field, value, context) =>
-  fetch("http://localhost:5086/api/validate", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      field,
-      value: valueHandler(value),
-    }),
-  })
-    .then((response) => response.json())
-    .then((result) => {
-      if (result.valid) {
-        return true;
-      } else {
-        // the object-level _entity error is not included in the errors
-        // collection by default because its context doesn't have a path
-        // -- so we create our own error instead and pass the name _entity
-        // so we can access the error for the UI
-        const error =
-          field === "_entity"
-            ? new ValidationError(
-                result.message,
-                value,
-                "_entity",
-                undefined,
-                true,
-              )
-            : context.createError({
-                message: result.message,
-              });
+// the object-level _entity error is not included in the errors
+// collection by default because its context doesn't have a path
+// -- so we create our own error instead and pass the name _entity
+// so we can access the error for the UI
+const makeError = (field, value, message, context) =>
+  field === "_entity"
+    ? new ValidationError(message, value, "_entity", undefined, true)
+    : context.createError({
+        message,
+      });
 
-        return error;
-      }
-    });
+const validate = (clientValidator, field, value, context) =>
+  clientValidator
+    ? new Promise((resolve) => {
+        const checkingEntity = field === "_entity";
+        const namePart = checkingEntity
+          ? "Entity"
+          : `${field.charAt(0).toUpperCase()}${field.slice(1)}`;
+        const f = clientValidator[`validate${namePart}`];
+        if (f) {
+          const result = f(value);
+          if (!result) {
+            resolve(true);
+          } else {
+            resolve(
+              makeError(
+                field,
+                value,
+                checkingEntity ? result.join(" ") : result,
+                context,
+              ),
+            );
+          }
+        } else {
+          console.error(`No validator for ${field}`);
+          resolve(true);
+        }
+      })
+    : fetch("http://localhost:5086/api/validate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          field,
+          value: valueHandler(value),
+        }),
+      })
+        .then((response) => response.json())
+        .then((result) => {
+          if (result.valid) {
+            return true;
+          } else {
+            return makeError(field, value, result.message, context);
+          }
+        });
 
 const AIInputForm = ({ onSubmit }) => {
   const formik = useFormik({
     initialValues: {
       name: "",
       age: 0,
+      email: "",
     },
     validationSchema: Yup.object({
       name: Yup.string().test("name-language-rule", function (value, context) {
-        return validate("name", value, context);
+        return validate(clientValidator, "name", value, context);
       }),
       age: Yup.number().test("age-language-rule", function (value, context) {
-        return validate("age", value, context);
+        return validate(clientValidator, "age", value, context);
       }),
       email: Yup.string().test(
         "email-language-rule",
         function (value, context) {
-          return validate("email", value, context);
+          return validate(clientValidator, "email", value, context);
         },
       ),
     }).test("entity-language-rule", function (value, context) {
-      return validate("_entity", value, context);
+      return validate(clientValidator, "_entity", value, context);
     }),
     onSubmit: (values) => {
       onSubmit(values);
@@ -92,7 +113,31 @@ const AIInputForm = ({ onSubmit }) => {
     setRules((r) => ({ ...r, [field]: e.target.value }));
   };
 
+  const [useClientValidator, setUseClientValidator] = useState(false);
+  const useClientValidatorChanged = (e) => {
+    const newUseClientValidator = e.target.checked;
+    setUseClientValidator(newUseClientValidator);
+    if (newUseClientValidator) {
+      if (!clientValidator) {
+        setConfiguringRules(true);
+        getClientValidator().then(() => {
+          setConfiguringRules(false);
+        });
+      }
+    } else {
+      setClientValidator(null);
+    }
+  };
+  const [clientValidator, setClientValidator] = useState(null);
   const [configuringRules, setConfiguringRules] = useState(false);
+  const getClientValidator = () =>
+    fetch("http://localhost:5086/api/getValidationJavaScript")
+      .then((res) => res.text())
+      .then((js) => {
+        const getValidator = new Function(`"use strict"; return ${js.trim()}`);
+        const validator = getValidator();
+        setClientValidator(validator);
+      });
   const configureRules = () => {
     setConfiguringRules(true);
     return fetch("http://localhost:5086/api/configureRules", {
@@ -103,10 +148,12 @@ const AIInputForm = ({ onSubmit }) => {
       body: JSON.stringify(
         Object.keys(rules).map((k) => ({ field: k, ruleText: rules[k] })),
       ),
-    }).then(() => {
-      setConfiguringRules(false);
-      formik.validateForm();
-    });
+    })
+      .then(() => (useClientValidator ? getClientValidator : Promise.resolve()))
+      .then(() => {
+        setConfiguringRules(false);
+        formik.validateForm();
+      });
   };
 
   return (
@@ -123,6 +170,15 @@ const AIInputForm = ({ onSubmit }) => {
             onChange={ruleChanged}
           />
           <ErrorDisplay formik={formik} field="_entity" />
+
+          <label className="flex items-center">
+            <input
+              type="checkbox"
+              checked={useClientValidator}
+              onChange={useClientValidatorChanged}
+            />
+            <span className="ml-2">Use client-side validator</span>
+          </label>
         </div>
       </div>
       <div className="flex flex-row gap-2">

@@ -53,6 +53,7 @@ public class Validator(SchemaType schemaType, Dictionary<string, MethodInfo> val
 
 public interface ILanguageValidator {
   void SetRules(Rule[] rules);
+  string GetJavaScript();
   ValidationResult ValidateField(ValidationInput input);
 }
 
@@ -77,6 +78,10 @@ public class LanguageValidator : ILanguageValidator {
     }
 
     generator.UpdateValidator(AllValidationRules());
+  }
+
+  public string GetJavaScript() {
+    return generator.GetJavaScript();
   }
 
   string MakeCSharpFieldName(string jsonFieldName) {

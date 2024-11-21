@@ -40,6 +40,10 @@ app.MapPost("/api/configureRules", (Rule[] rules, [FromServices] ILanguageValida
   return Results.Ok();
 });
 
+app.MapGet("/api/getValidationJavaScript", ([FromServices] ILanguageValidator validator) => {
+  return Results.Text(validator.GetJavaScript());
+});
+
 app.MapPost("/api/validate", (ValidationInput input, [FromServices] ILanguageValidator validator) => {
   var result = validator.ValidateField(input);
   var output =

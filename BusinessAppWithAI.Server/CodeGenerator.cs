@@ -1,7 +1,9 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Emit;
+using OpenAI;
 using OpenAI.Chat;
+using System.ClientModel;
 using System.Diagnostics;
 using System.Reflection;
 using System.Text;
@@ -82,6 +84,28 @@ public class CodeGenerator {
                               Verwende NICHT die Klasse System.Net.Mail.MailAddress zur Verifikation von Email-Adressen.
                               """;
 
+  const string JS_SYS_PROMPT = """
+                               Du bist ein Entwickler. Du schreibst JavaScript-Code auf Basis der Vorgaben und Regeln des Benutzers.
+                               """;
+
+  const string CS_CODE = "{{CSCODE}}";
+
+  const string JS_PROMPT = $"""
+                            Hier ist der Code für eine Validierungsklasse in C#:
+
+                            {CS_CODE}
+
+                            Erzeuge eine äquivalente Implementation in JavaScript, gekapselt in einer IIFE-Struktur,
+                            die ein Objekt mit den Methoden erzeugt, die in C# implementiert sind. 
+                            Übernimm die Logik der Implementation präzise.
+                            Verwende undefined anstelle von null. 
+                            Verwende Kurzform für Prüfungen auf undefined, truthy oder falsy, ohne === oder !==. 
+                            Verwende Variablennamen mit Kleinbuchstaben am Anfang, auch für die Properties des Objekts.
+                            Gib lediglich den JavaScript-Code aus, keine Erklärungen oder Kommentare. 
+                            Gib lediglich die IIFE-Struktur aus, ohne Zuweisung an eine Variable.
+                            """;
+
+
   private readonly string apiKey;
   private readonly SchemaType schemaType;
   private readonly string modelCode;
@@ -109,7 +133,7 @@ public class CodeGenerator {
   public Validator? Validator { get; private set; }
 
   public void UpdateValidator(IEnumerable<string> validationRules) {
-    var code = GenerateCode(validationRules);
+    var code = GenerateCsharpCode(validationRules);
     var assembly = CompileValidationCode(code);
     if (assembly != null) {
       var validators = GetValidatorMethods(assembly);
@@ -120,14 +144,7 @@ public class CodeGenerator {
     }
   }
 
-  string GenerateCode(IEnumerable<string> validationRules) {
-    ArgumentNullException.ThrowIfNull(validationRules);
-
-    string rulesString = "- " + string.Join("\n- ", validationRules);
-    var userPrompt = BASE_PROMPT
-      .Replace(MODEL_CODE, "\n" + modelCode + "\n")
-      .Replace(RULES_MARKER, "\n" + rulesString + "\n");
-
+  string GenerateCode(string systemPrompt, string userPrompt, string resultCodeShortcut) {
 #if DEBUG
     Console.WriteLine($"[PROMPT]:\n{userPrompt}");
 
@@ -143,23 +160,48 @@ public class CodeGenerator {
     //   new OpenAIClientOptions() { Endpoint = new Uri("http://localhost:1234/v1") });
     ChatCompletion completion = client.CompleteChat(
       [
-        new SystemChatMessage(SYSTEM_PROMPT),
+        new SystemChatMessage(systemPrompt),
         new UserChatMessage(userPrompt),
         // for o1-preview or o1-mini, combine the two prompts
-        //new UserChatMessage(SYSTEM_PROMPT + userPrompt),
+        //new UserChatMessage(systemPrompt + userPrompt),
       ],
       new ChatCompletionOptions { Temperature = 0, }
     );
 
     var code = completion.Content[0].Text;
-    var match = Regex.Match(code, @".*```csharp(.*?)\n```.*", RegexOptions.Singleline);
+    var match = Regex.Match(code, ".*```" + resultCodeShortcut + "(.*?)\n```.*", RegexOptions.Singleline);
     var processedCode = match.Success ? match.Groups[1].Value : code;
+    this.lastGeneratedCode = processedCode;
 #if DEBUG
     stopwatch.Stop();
     Console.WriteLine($"[CODE]:\n{processedCode}");
     Console.WriteLine($"[TIME]: {stopwatch.ElapsedMilliseconds}ms");
 #endif
     return processedCode;
+  }
+
+  string GenerateCsharpCode(IEnumerable<string> validationRules) {
+    ArgumentNullException.ThrowIfNull(validationRules);
+
+    string rulesString = "- " + string.Join("\n- ", validationRules);
+    var userPrompt = BASE_PROMPT
+      .Replace(MODEL_CODE, "\n" + modelCode + "\n")
+      .Replace(RULES_MARKER, "\n" + rulesString + "\n");
+
+    return GenerateCode(SYSTEM_PROMPT, userPrompt, "csharp");
+  }
+
+  string? lastGeneratedCode;
+
+  public string GetJavaScript() {
+    if (lastGeneratedCode == null) {
+      return "";
+    }
+
+    var userPrompt = JS_PROMPT
+      .Replace(CS_CODE, "\n" + lastGeneratedCode + "\n");
+
+    return GenerateCode(JS_SYS_PROMPT, userPrompt, "javascript");
   }
 
   Assembly? CompileValidationCode(string code) {
