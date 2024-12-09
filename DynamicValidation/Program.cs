@@ -6,7 +6,7 @@ internal class Program
 {
     private static void Main(string[] args)
     {
-        Env.Load();
+        Env.TraversePath().Load();
         // API Key auslesen
         var apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
 

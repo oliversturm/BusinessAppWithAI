@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Spectre.Console;
 using Rule = BusinessAppWithAI.Server.Rule;
 
-Env.Load();
+Env.TraversePath().Load();
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddScoped<IValidator<BusinessObject>, BusinessObjectValidator>();
