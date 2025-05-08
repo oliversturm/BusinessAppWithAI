@@ -27,82 +27,67 @@ public class CodeGenerator {
   const string MODEL_CODE = "{{MODEL}}";
 
   const string SYSTEM_PROMPT = """
-                               Du bist ein Entwickler. Du schreibst C#-Code auf Basis der Vorgaben und Regeln des Benutzers.
+                               You are a developer. You write C# code based on the specifications and rules provided by the user.
                                """;
 
   const string BASE_PROMPT = $"""
-                              Erstelle eine statische Klasse mit dem Namen '{VALIDATOR_CLASS_NAME}' in C#.
-                              Die Klasse sollte je eine statische Methode enthalten für jede public-Property des
-                              folgenden schematischen Typs:
+                              Create a static class named '{VALIDATOR_CLASS_NAME}' in C#.
+                              The class should contain a static method for each public property of the following schematic type:
 
                               {MODEL_CODE}
 
-                              Jede solche Methode sollte den Namen Validate<Property> haben.
-                              Die Methode sollte einen Parameter vom Typ der Property entgegennehmen und 'string?' zurückgeben.
-                              Zum Beispiel wäre die Methode für eine Property "public string Name" so deklariert:
+                              Each such method should be named Validate<Property>.
+                              The method should accept a parameter of the property's type and return 'string?'.
+                              For example, the method for a property "public string Name" would be declared as:
 
                               public string? ValidateName(string name) ...
 
-                              Als zweites Beispiel wäre die Methode für eine Property "public int Age" so deklariert:
+                              As a second example, the method for a property "public int Age" would be declared as:
 
                               public string? ValidateAge(int age) ...
 
-                              Die folgende Liste enthält Regeln, die sich auf einzelne Properties des Schemas beziehen.
-                              Der Feldname '_entity' ist ein Sonderfall.
+                              The following list contains rules that apply to individual properties of the schema.
+                              The field name '_entity' is a special case.
 
                               {RULES_MARKER}
 
-                              Jede der Validate-Methoden muss nun so implementiert werden, dass sie entsprechend der Regel
-                              für die Property die Validität des Feldwertes prüft. Sollte es keine Regel für die Property
-                              geben, oder die Validität des Wertes kann zweifelsfrei festgestellt werden, muss die Methode
-                              'null' zurückgeben. Wenn die Validität nicht gegeben ist, muss ein Text zurückgegeben werden,
-                              der den Fehlerzustand kurz und präzise beschreibt.
-                              Bevor in einer Validierungsmethode auf den Wert zugegriffen wird, muss geprüft werden,
-                              dass dieser nicht "null" ist (für Referenztypen).
+                              Each of the Validate methods must be implemented such that it checks the validity of the field value according to the rule for the property. If there is no rule for the property, or the validity of the value can be determined without doubt, the method must return 'null'. If the value is not valid, the method must return a short and precise text describing the error condition.
+                              Before accessing the value in a validation method, the code must check that the value is not "null" (for reference types).
 
-                              Für den besonderen Feldnamen '_entity' muss eine weitere Methode generiert werden, mit 
-                              dem Namen 'ValidateEntity' und folgender Signatur: 
+                              For the special field name '_entity', another method must be generated, named 'ValidateEntity' with the following signature:
 
                               public string[]? ValidateEntity(Entity entity) ...
 
-                              Der Typname 'Entity' muss dabei durch den Namen des zuvor beschriebenen schematischen
-                              Typs ersetzt werden.
+                              The type name 'Entity' must be replaced by the name of the previously described schematic type.
 
-                              Die Implementation dieser Methode muss die Validierung aller Properties durch Aufruf
-                              der jeweiligen Validate<Property>-Methoden beinhalten, sowie weitere Prüfungen, wie sie
-                              durch die Regel für den besonderen Feldnamen '_entity' vorgegeben sind. Es müssen
-                              immer alle Validierungen ausgeführt werden, und etwaige Fehlerresultate werden in einer 
-                              Resultatsliste gesammelt. Wenn diese Liste letztlich etwas enthält, wird sie als
-                              Resultat der Methode zurückgegeben, andernfalls ist der Rückgabewert 'null'.
+                              The implementation of this method must include the validation of all properties by calling the respective Validate<Property> methods, as well as any additional checks specified by the rule for the special field name '_entity'. All validations must always be executed, and any error results must be collected in a result list. If this list contains anything, it is returned as the result of the method; otherwise, the return value is 'null'.
 
-                              Gib ausschließlich Code und keinerlei Beschreibungstext aus.
-                              Der oben angegebene schematische Typ soll nicht in der Ausgabe enthalten sein.
-                              Verwende die Direktive "#nullable enable" zu Beginn der Datei.
-                              Gib alle Fehlertexte in deutsch aus, ohne dabei technische
-                              Beschreibungen wie "nicht null" zu verwenden.
-                              Verwende im Code nur Klassen aus den Namespaces System und System.Text.RegularExpressions.
-                              Verwende NICHT die Klasse System.Net.Mail.MailAddress zur Verifikation von Email-Adressen.
+                              Output only code and no descriptive text.
+                              The schematic type given above should not be included in the output.
+                              Use the directive "#nullable enable" at the beginning of the file.
+                              All error messages must be in English, without using technical descriptions like "not null".
+                              Use only classes from the namespaces System and System.Text.RegularExpressions in the code.
+                              Do NOT use the System.Net.Mail.MailAddress class for email address verification.
                               """;
 
   const string JS_SYS_PROMPT = """
-                               Du bist ein Entwickler. Du schreibst JavaScript-Code auf Basis der Vorgaben und Regeln des Benutzers.
+                               You are a developer. You write JavaScript code based on the specifications and rules provided by the user.
                                """;
 
   const string CS_CODE = "{{CSCODE}}";
 
   const string JS_PROMPT = $"""
-                            Hier ist der Code für eine Validierungsklasse in C#:
+                            Here is the code for a validation class in C#:
 
                             {CS_CODE}
 
-                            Erzeuge eine äquivalente Implementation in JavaScript, gekapselt in einer IIFE-Struktur,
-                            die ein Objekt mit den Methoden erzeugt, die in C# implementiert sind. 
-                            Übernimm die Logik der Implementation präzise.
-                            Verwende undefined anstelle von null. 
-                            Verwende Kurzform für Prüfungen auf undefined, truthy oder falsy, ohne === oder !==. 
-                            Verwende Variablennamen mit Kleinbuchstaben am Anfang, auch für die Properties des Objekts.
-                            Gib lediglich den JavaScript-Code aus, keine Erklärungen oder Kommentare. 
-                            Gib lediglich die IIFE-Struktur aus, ohne Zuweisung an eine Variable.
+                            Create an equivalent implementation in JavaScript, encapsulated in an IIFE structure that produces an object with the methods implemented in C#.
+                            Precisely adopt the logic of the implementation.
+                            Use undefined instead of null.
+                            Use shorthand for checks on undefined, truthy or falsy, without === or !==.
+                            Use variable names starting with a lowercase letter, including for the properties of the object.
+                            Output only the JavaScript code, no explanations or comments.
+                            Output only the IIFE structure, without assignment to a variable.
                             """;
 
 
