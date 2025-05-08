@@ -103,11 +103,11 @@ const AIInputForm = ({ onSubmit }) => {
 
   const [rules, setRules] = useState({
     _entity:
-      "Menschen unter 70 dürfen nicht Wunibald oder Frideruna heißen, das verstößt gegen Regeln des guten Geschmacks.",
-    name: "Mindestens drei Zeichen!",
-    age: "Mindestens 1, maximal 120",
+      "People under 70 must not be named Percival or Ethelreda; it would be a violation of good taste.",
+    name: "At least three characters!",
+    age: "At least 1, at most 120",
     email:
-      "Muss eine gültige E-Mail-Adresse sein, entweder @neogeeks.de oder @oliversturm.com",
+      "Must be a valid email address, @oliversturm.com or @neogeeks.de",
   });
   const ruleChanged = (field) => (e) => {
     setRules((r) => ({ ...r, [field]: e.target.value }));
