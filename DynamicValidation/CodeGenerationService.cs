@@ -1,4 +1,4 @@
-﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Emit;
 using OpenAI.Chat;
@@ -12,29 +12,29 @@ namespace DynamicValidation
     {
         const string MODEL_NAME = "gpt-4o";
 
-        const string METHOD_TEXT = "Web-API-Funktion";
-        const string MODEL_TEXT = "'Data Transfer Object'-Klasse";
+        const string METHOD_TEXT = "Web API Function";
+        const string MODEL_TEXT = "'Data Transfer Object'-Class";
         const string VALIDATOR_CLASS_NAME = "Validator";
         const string VALIDATION_METHOD_NAME = "ValidateParameters";
         const string TYPE_MARKER = "{{TYPE}}";
         const string CODE_MARKER = "{{CODE}}";
         const string RULES_MARKER = "{{RULES}}";
         const string SYSTEM_PROMPT = """
-            Du bist ein Entwickler. Du schreibst C#-Code auf Basis der Vorgaben und Regeln des Benutzers.
+            You are a developer. You write C# code based on the specifications and rules provided by the user.
             """;
         const string BASE_PROMPT = $"""
-            Erstelle eine Methode zur Validierung aller Eingabeparameter einer {TYPE_MARKER} in C# Code.
-            Deklariere die Methode innerhalb einer Klasse mit dem Namen '{VALIDATOR_CLASS_NAME}'.
-            Die Methode soll statisch deklariert werden und den Namen '{VALIDATION_METHOD_NAME}' tragen.
-            Ist ein Parameter nicht valide, soll eine entsprechende Exception ausgelöst werden.
-            Der Aufbau der {TYPE_MARKER} sieht wie folgt aus:
+            Create a method to validate all input parameters of a {TYPE_MARKER} in C# code.
+            Declare the method inside a class named '{VALIDATOR_CLASS_NAME}'.
+            The method should be declared static and be named '{VALIDATION_METHOD_NAME}'.
+            If a parameter is not valid, an appropriate exception should be thrown.
+            The structure of the {TYPE_MARKER} is as follows:
             {CODE_MARKER}
-            Berücksichtige bei der Validierung bitte die folgenden Regeln:
+            Please consider the following rules for validation:
             {RULES_MARKER}
-            Gib ausschließlich Code und keinerlei Beschreibungstext aus.
-            Gib die Fehlertexte in deutsch aus.
-            Verwende im Code nur Klassen aus den Namespaces System und System.Text.RegularExpressions.
-            Verwende NICHT die Klasse System.Net.Mail.MailAddress zur Verifikation der Email-Adresse.
+            Output only code, and no descriptive text.
+            The error messages must be in English.
+            Use only classes from the namespaces System and System.Text.RegularExpressions in the code.
+            Do NOT use the System.Net.Mail.MailAddress class for email address verification.
             """;
         private readonly string apiKey;
 
