@@ -41,7 +41,14 @@ internal class Program
                 "https://www.societegenerale.fr",
                 1000);
             Console.WriteLine("Validation 1 successful!");
+        }
+        catch (ValidationException ex)
+        {
+            Console.WriteLine($"Validation 1 error: {ex.InnerException.Message}");
+        }
 
+        try
+        {
             codeGenService.Validate(
                 method,
                 "Nordmann AS",
@@ -57,7 +64,7 @@ internal class Program
         }
         catch (ValidationException ex)
         {
-            Console.WriteLine($"Validation error: {ex.InnerException.Message}");
+            Console.WriteLine($"Validation 2 error: {ex.InnerException.Message}");
         }
     }
 }
