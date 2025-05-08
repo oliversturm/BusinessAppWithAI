@@ -11,9 +11,6 @@
         string websiteUri, 
         double orderLimit = 0)
     {
-        // Logik zum Hinzufügen des Kunden
-        // ...
-
-        Console.WriteLine("Kunde erfolgreich hinzugefügt!");
+        Console.WriteLine("Customer added successfully");
     }
 }
