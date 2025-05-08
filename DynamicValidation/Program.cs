@@ -1,4 +1,4 @@
-﻿using DynamicValidation;
+using DynamicValidation;
 using System.ComponentModel.DataAnnotations;
 using DotNetEnv;
 
@@ -7,62 +7,57 @@ internal class Program
     private static void Main(string[] args)
     {
         Env.TraversePath().Load();
-        // API Key auslesen
         var apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
 
-        // Regeln festlegen
         var rules = new[]
         {
-            "Pflichtfelder sind: CompanyName, Street, ZipCode, City, CountryCode, CreditLimit",
-            "Adresse muss in Europa sein (EU und Nicht-EU-Staaten).",
-            "Das Kreditlimit darf nicht kleiner als 0 sein",
-            "Das Kreditlimit darf nicht größer als 1 Million sein",
-            "Das Kreditlimit darf nicht größer als 50000 Euro sein, wenn der Kunde aus einem Nicht-EU-Land kommt.",
-            "Website Adresse muss eine gültige URI sein, wenn sie gefüllt ist.",
-            "Die E-Mail-Adresse muss eine gültige Adresse sein, wenn sie gefüllt ist.",
-            "Die Telefonnummer muss ein gültiges Format haben, wenn sie gefüllt ist",
+            "Required fields are: CompanyName, Street, ZipCode, City, CountryCode, CreditLimit",
+            "The address must be in Europe (EU and non-EU countries).",
+            "The credit limit must not be less than 0",
+            "The credit limit must not be greater than 1 million",
+            "The credit limit must not be greater than 50,000 euros if the customer is from a non-EU country.",
+            "Website address must be a valid URI if provided.",
+            "The email address must be valid if provided.",
+            "The phone number must have a valid format if provided",
         };
         
-        // Code generieren
         var codeGenService = new CodeGenerationService(apiKey);
         var validationCode = codeGenService.GenerateValidationCode<CustomerService>(nameof(CustomerService.AddCustomer), rules);
-        //var validationCode = codeGenService.GenerateValidationCode<Customer>(rules);
         var method = codeGenService.CompileValidationMethod(validationCode);
 
         Console.WriteLine($"\n[CODE]:{validationCode}");
 
-        // Validierung durchführen
         try
         {
             codeGenService.Validate(
                 method,
-                "Mustermann GmbH",
-                "Musterstraße 1",
-                "12345",
-                "Musterstadt",
-                "DE", // NGA 
-                "0491725395187",
-                "jörg.neumann@neogeeks.de",
-                "https://www.mustermann.de",
+                "Société Générale",
+                "29 Boulevard Haussmann",
+                "75009",
+                "Paris",
+                "FR", // France (EU)
+                "+33123456789",
+                "jean.dupont@societegenerale.fr",
+                "https://www.societegenerale.fr",
                 1000);
-            Console.WriteLine("Validierung 1 erfolgreich!");
+            Console.WriteLine("Validation 1 successful!");
 
             codeGenService.Validate(
                 method,
-                "Mustermann GmbH",
-                "Musterstraße 1",
-                "12345",
-                "Musterstadt",
-                "NO",
-                "00491725395187",
-                "joerg.neumann@neogeeks.de",
-                "https://www.mustermann.de",
-                60000); // <- Kreditlimit zu hoch für Nicht-EU-Kunde
-            Console.WriteLine("Validierung 2 erfolgreich!");
+                "Nordmann AS",
+                "Karl Johans gate 1",
+                "0154",
+                "Oslo",
+                "NO", // Norway (Non-EU)
+                "+4740123456",
+                "ola.nordmann@nordmann.no",
+                "https://www.nordmann.no",
+                60000); // <- Credit limit too high for non-EU customer
+            Console.WriteLine("Validation 2 successful!");
         }
         catch (ValidationException ex)
         {
-            Console.WriteLine($"Validierungsfehler: {ex.InnerException.Message}");
+            Console.WriteLine($"Validation error: {ex.InnerException.Message}");
         }
     }
 }
