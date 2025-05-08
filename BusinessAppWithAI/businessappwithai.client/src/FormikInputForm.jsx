@@ -10,18 +10,22 @@ const FormikInputForm = ({ onSubmit }) => {
       email: "",
     },
     validationSchema: Yup.object({
-      name: Yup.string()
-        .required("Name is required")
-        .test("test-string", 'String must be "correct"', function (value) {
-          if (value !== "correct") {
-            return false;
-          }
-          return true;
-        }),
+      name: Yup.string().required("Name is required"),
       age: Yup.number()
         .min(1, "Age must be at least 1")
         .required("Age is required"),
-      email: Yup.string().email("Email must be a valid email address"),
+      email: Yup.string()
+        .email("Email must be a valid email address")
+        .test(
+          "valid-domain",
+          "Email domain must be neogeeks.de or oliversturm.com",
+          (value) => {
+            if (!value) return false;
+            const domain = value.split("@")[1];
+            return ["neogeeks.de", "oliversturm.com"].includes(domain);
+          },
+        )
+        .required(),
     }),
     onSubmit: (values) => {
       onSubmit(values);
