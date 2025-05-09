@@ -82,6 +82,7 @@ public class CodeGenerator {
                             {CS_CODE}
 
                             Create an equivalent implementation in JavaScript, encapsulated in an IIFE structure that produces an object with the methods implemented in C#.
+                            Implement the functions separately from the return statement, and don't use "this".
                             Precisely adopt the logic of the implementation.
                             Use undefined instead of null.
                             Use shorthand for checks on undefined, truthy or falsy, without === or !==.
